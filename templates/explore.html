@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Explore - RetailPredict{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
+            <div>
+                <h1><i class="fas fa-database"></i> Data Explorer</h1>
+                <p>Visualize market trends and data patterns</p>
+            </div>
+            <div style="text-align: center; display: flex; justify-content: center; align-items: center;">
+                <img src="/static/images/market-stall.jpg" alt="Market Stall Display" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="explorer-container">
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-area"></i> Price Distribution</h3>
+                <div id="priceDistribution"></div>
+            </div>
+
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-bar"></i> Price by Product</h3>
+                <div id="priceByProduct"></div>
+            </div>
+
+            <div class="chart-card">
+                <h3><i class="fas fa-line-chart"></i> Price Trend</h3>
+                <div id="priceTrend"></div>
+            </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div class="stats-card">
+            <h2><i class="fas fa-chart-line"></i> Dataset Statistics</h2>
+            <div id="statsContent" class="stats-content">Loading...</div>
+        </div>
+
+        <!-- Data Sample -->
+        <div class="data-sample-card">
+            <h2><i class="fas fa-table"></i> Complete Dataset
+                <span id="recordCount" style="font-size: 0.8rem; color: #999;"></span>
+            </h2>
+            <div id="dataSample" class="table-container">Loading...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadCharts();
+    loadStats();
+});
+
+function loadCharts() {
+    // Price Distribution
+    fetch('/api/chart/price_distribution')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('priceDistribution').innerHTML = `<p style="color: #666; padding: 2rem; text-align: center;">⚠️ ${data.error}</p>`;
+            } else if (data.data && data.layout) {
+                Plotly.newPlot('priceDistribution', data.data, data.layout, { responsive: true, displayModeBar: false });
+            }
+        })
+        .catch(e => {
+            console.error('Error loading price distribution:', e);
+            document.getElementById('priceDistribution').innerHTML = '<p style="color: #666; padding: 2rem; text-align: center;">⚠️ Unable to load chart</p>';
+        });
+
+    // Price by Product
+    fetch('/api/chart/price_by_product')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('priceByProduct').innerHTML = `<p style="color: #666; padding: 2rem; text-align: center;">⚠️ ${data.error}</p>`;
+            } else if (data.data && data.layout) {
+                Plotly.newPlot('priceByProduct', data.data, data.layout, { responsive: true, displayModeBar: false });
+            }
+        })
+        .catch(e => {
+            console.error('Error loading price by product:', e);
+            document.getElementById('priceByProduct').innerHTML = '<p style="color: #666; padding: 2rem; text-align: center;">⚠️ Unable to load chart</p>';
+        });
+
+    // Price Trend
+    fetch('/api/chart/price_trend')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('priceTrend').innerHTML = `<p style="color: #666; padding: 2rem; text-align: center;">⚠️ ${data.error}</p>`;
+            } else if (data.data && data.layout) {
+                Plotly.newPlot('priceTrend', data.data, data.layout, { responsive: true, displayModeBar: false });
+            }
+        })
+        .catch(e => {
+            console.error('Error loading price trend:', e);
+            document.getElementById('priceTrend').innerHTML = '<p style="color: #666; padding: 2rem; text-align: center;">⚠️ Unable to load chart</p>';
+        });
+}
+
+function loadStats() {
+    fetch('/api/explore')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('statsContent').innerHTML = `<p style="color: #d32f2f;">Error: ${data.error}</p>`;
+                document.getElementById('dataSample').innerHTML = `<p style="color: #d32f2f;">Error: ${data.error}</p>`;
+                return;
+            }
+
+            // Summary stats
+            let statsHTML = '<div class="stats-grid">';
+            const shape = data.summary.shape || [0, 0];
+            statsHTML += `<div class="stat-box">
+                <p class="stat-label">Total Records</p>
+                <p class="stat-number">${shape[0]}</p>
+            </div>`;
+            statsHTML += `<div class="stat-box">
+                <p class="stat-label">Features</p>
+                <p class="stat-number">${shape[1]}</p>
+            </div>`;
+            
+            // Add more stats if available
+            if (data.summary.numeric_summary && Object.keys(data.summary.numeric_summary).length > 0) {
+                const firstCol = Object.keys(data.summary.numeric_summary)[0];
+                if (data.summary.numeric_summary[firstCol].mean !== undefined) {
+                    statsHTML += `<div class="stat-box">
+                        <p class="stat-label">Avg (First Numeric Column)</p>
+                        <p class="stat-number">${Math.round(data.summary.numeric_summary[firstCol].mean)}</p>
+                    </div>`;
+                }
+            }
+            
+            statsHTML += '</div>';
+            document.getElementById('statsContent').innerHTML = statsHTML;
+
+            // Data sample table - now shows ALL data
+            if (data.data_sample && data.data_sample.length > 0) {
+                document.getElementById('recordCount').innerHTML = ` (${data.data_sample.length} records)`;
+                
+                let tableHTML = '<table class="data-table"><thead><tr>';
+                const cols = Object.keys(data.data_sample[0] || {});
+                cols.forEach(col => tableHTML += `<th>${col}</th>`);
+                tableHTML += '</tr></thead><tbody>';
+
+                data.data_sample.forEach((row, idx) => {
+                    tableHTML += '<tr>';
+                    cols.forEach(col => {
+                        let val = row[col];
+                        if (val === null || val === undefined) val = 'N/A';
+                        tableHTML += `<td>${val}</td>`;
+                    });
+                    tableHTML += '</tr>';
+                });
+
+                tableHTML += '</tbody></table>';
+                document.getElementById('dataSample').innerHTML = tableHTML;
+            } else {
+                document.getElementById('dataSample').innerHTML = '<p>No data available</p>';
+            }
+        })
+        .catch(e => {
+            console.error('Error loading stats:', e);
+            document.getElementById('statsContent').innerHTML = '<p style="color: #d32f2f;">Error loading statistics</p>';
+            document.getElementById('dataSample').innerHTML = '<p style="color: #d32f2f;">Error loading data sample</p>';
+        });
+}
+</script>
+{% endblock %}

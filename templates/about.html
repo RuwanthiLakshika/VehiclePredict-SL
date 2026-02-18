@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}About - RetailPredict{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
+            <div>
+                <h1><i class="fas fa-circle-info"></i> About RetailPredict</h1>
+                <p>Understanding Sri Lankan retail markets through AI</p>
+            </div>
+            <div style="text-align: center; display: flex; justify-content: center; align-items: center;">
+                <img src="/static/images/banana-vendor.jpg" alt="Banana Market Vendor" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
+            </div>
+        </div>
+    </div>
+
+    <div class="about-container">
+        <!-- Project Overview -->
+        <section class="about-section">
+            <h2><i class="fas fa-target"></i> Project Overview</h2>
+            <p>RetailPredict is an AI-powered application designed to forecast retail prices in Sri Lanka using advanced machine learning techniques. The system analyzes historical market data to provide accurate price predictions and insights into market trends.</p>
+        </section>
+
+        <!-- Technology Stack -->
+        <section class="about-section">
+            <h2><i class="fas fa-cogs"></i> Technology Stack</h2>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h3><i class="fas fa-brain"></i> Machine Learning</h3>
+                    <ul>
+                        <li><strong>CatBoost:</strong> Gradient boosting framework optimized for categorical features</li>
+                        <li><strong>SHAP:</strong> Explainable AI for understanding model predictions</li>
+                        <li><strong>scikit-learn:</strong> Data preprocessing and evaluation metrics</li>
+                    </ul>
+                </div>
+                <div class="tech-card">
+                    <h3><i class="fas fa-server"></i> Backend</h3>
+                    <ul>
+                        <li><strong>Flask:</strong> Lightweight Python web framework</li>
+                        <li><strong>Python:</strong> Primary programming language</li>
+                        <li><strong>Pandas:</strong> Data manipulation and analysis</li>
+                    </ul>
+                </div>
+                <div class="tech-card">
+                    <h3><i class="fas fa-paint-brush"></i> Frontend</h3>
+                    <ul>
+                        <li><strong>HTML5:</strong> Semantic markup</li>
+                        <li><strong>CSS3:</strong> Modern styling and animations</li>
+                        <li><strong>JavaScript:</strong> Interactive features</li>
+                        <li><strong>Plotly:</strong> Interactive data visualization</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Model Information -->
+        <section class="about-section">
+            <h2><i class="fas fa-chart-line"></i> Model Performance</h2>
+            <div class="model-info">
+                <div class="metric-row">
+                    <span class="metric-label">Algorithm:</span>
+                    <span class="metric-value">CatBoost Regressor (Gradient Boosting)</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">R² Score:</span>
+                    <span class="metric-value">0.9573 (95.73%)</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Mean Absolute Error:</span>
+                    <span class="metric-value">₨119.31</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Root Mean Square Error:</span>
+                    <span class="metric-value">₨185.24</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Training Samples:</span>
+                    <span class="metric-value">5000+ records</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Features:</span>
+                    <span class="metric-value">15+ categorical and numeric features</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="about-section">
+            <h2><i class="fas fa-star"></i> Key Features</h2>
+            <ul class="feature-list">
+                <li>
+                    <strong>Real-time Price Predictions:</strong> Get instant price forecasts based on market factors
+                </li>
+                <li>
+                    <strong>SHAP Explainability:</strong> Understand why predictions are made with transparent feature importance analysis
+                </li>
+                <li>
+                    <strong>Data Visualization:</strong> Interactive charts showing price distributions, trends, and patterns
+                </li>
+                <li>
+                    <strong>Market Insights:</strong> Explore historical data and identify market trends
+                </li>
+                <li>
+                    <strong>High Accuracy:</strong> 95.73% R² score ensures reliable forecasts
+                </li>
+            </ul>
+        </section>
+
+        <!-- Data Sources -->
+        <section class="about-section">
+            <h2><i class="fas fa-database"></i> Data Sources</h2>
+            <p>The model has been trained on comprehensive retail price data from Sri Lankan markets, including:</p>
+            <ul class="data-sources-list">
+                <li>Historical price records from multiple markets across regions</li>
+                <li>Product categories including vegetables, fruits, and other retail items</li>
+                <li>Market supply and demand indicators</li>
+                <li>Seasonal and temporal patterns</li>
+                <li>Regional price variations</li>
+            </ul>
+        </section>
+
+        <!-- How It Works -->
+        <section class="about-section">
+            <h2><i class="fas fa-wrench"></i> How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Input Features</h3>
+                        <p>Provide product details, market location, and supply/demand information</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Model Processing</h3>
+                        <p>The CatBoost model processes your input using learned patterns</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Prediction</h3>
+                        <p>Receive an accurate price forecast with feature importance details</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Insights</h3>
+                        <p>Understand which factors most influenced the prediction using SHAP</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact/Info -->
+        <section class="about-section contact-section">
+            <h2><i class="fas fa-envelope"></i> Information</h2>
+            <div class="contact-info">
+                <p><strong>Project:</strong> RetailPredict - AI-Powered Price Forecasting</p>
+                <p><strong>Version:</strong> 1.0</p>
+                <p><strong>Last Updated:</strong> February 2024</p>
+                <p><strong>Purpose:</strong> Assist market participants in understanding and predicting retail price trends in Sri Lanka</p>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

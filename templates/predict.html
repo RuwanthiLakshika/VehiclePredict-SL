@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Predict - RetailPredict{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
+            <div>
+                <h1><i class="fas fa-wand-magic-sparkles"></i> Price Prediction</h1>
+                <p>Enter product details to get AI-powered price predictions with explainability</p>
+            </div>
+            <div style="text-align: center; display: flex; justify-content: center; align-items: center;">
+                <img src="/static/images/produce-market.jpg" alt="Fresh Produce Market" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
+            </div>
+        </div>
+    </div>
+
+    <div class="prediction-container">
+        <!-- Input Form -->
+        <div class="form-section">
+            <div class="form-card">
+                <h2><i class="fas fa-edit"></i> Input Features</h2>
+                <form id="predictionForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product">Product *</label>
+                            <select id="product" name="product_name" required>
+                                <option value="">Select a product...</option>
+                                {% for product in products %}
+                                <option value="{{ product }}">{{ product }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category *</label>
+                            <select id="category" name="category" required>
+                                <option value="">Select a category...</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="perishability">Perishability *</label>
+                            <select id="perishability" name="perishability" required>
+                                <option value="">Select perishability level...</option>
+                                {% for item in perishability %}
+                                <option value="{{ item }}">{{ item }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="volatility">Price Volatility (0-100) *</label>
+                            <input type="number" id="volatility" name="price_volatility" step="0.01" min="0" max="100" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price_range">Price Range (₨) *</label>
+                            <input type="number" id="price_range" name="price_range" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="avg_price">Average Price (₨) *</label>
+                            <input type="number" id="avg_price" name="avg_price" step="0.01" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <i class="fas fa-sparkles"></i> Get Prediction
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <div class="prediction-card">
+                <div class="prediction-header">
+                    <h2><i class="fas fa-check-circle"></i> Prediction Results</h2>
+                    <span class="timestamp" id="timestamp"></span>
+                </div>
+
+                <!-- Main Prediction -->
+                <div class="prediction-result">
+                    <div class="predicted-price">
+                        <p class="price-label">Predicted Price</p>
+                        <h1 id="predictedPrice">₨ 0.00</h1>
+                        <p class="price-note">Based on CatBoost AI model</p>
+                    </div>
+                </div>
+
+                <!-- Feature Importance -->
+                <div class="importance-section">
+                    <h3><i class="fas fa-chart-bar"></i> Top Influencing Factors</h3>
+                    <div id="importanceChart" class="chart-container">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+
+                <!-- Error Info -->
+                <div class="info-box">
+                    <p><i class="fas fa-info-circle"></i> <strong>Note:</strong> Predictions are based on historical market data and may vary based on real-time market conditions.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Section -->
+        <div class="error-section" id="errorSection" style="display: none;">
+            <div class="error-card">
+                <h3><i class="fas fa-exclamation-circle"></i> Error</h3>
+                <p id="errorMessage"></p>
+                <button onclick="document.getElementById('errorSection').style.display='none'" class="btn btn-secondary">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // Collect form data
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+
+    try {
+        // Show loading state
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorSection').style.display = 'none';
+
+        const response = await fetch('/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Display results
+            document.getElementById('predictedPrice').textContent = '₨ ' + result.prediction.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('timestamp').textContent = 'Predicted on ' + result.timestamp;
+
+            // Display feature importance
+            displayImportance(result.importance);
+
+            document.getElementById('resultsSection').style.display = 'block';
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            showError(result.error || 'Prediction failed');
+        }
+    } catch (error) {
+        showError('An error occurred: ' + error.message);
+    }
+});
+
+function displayImportance(importance) {
+    const features = Object.keys(importance);
+    const values = Object.values(importance);
+
+    if (features.length === 0) {
+        document.getElementById('importanceChart').innerHTML = '<p>No feature importance data available</p>';
+        return;
+    }
+
+    const trace = {
+        x: values,
+        y: features,
+        type: 'bar',
+        orientation: 'h',
+        marker: { color: '#0066CC' }
+    };
+
+    const layout = {
+        margin: { l: 150 },
+        xaxis: { title: 'SHAP Impact' },
+        height: 300,
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)'
+    };
+
+    Plotly.newPlot('importanceChart', [trace], layout, { responsive: true });
+}
+
+function showError(message) {
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('errorSection').style.display = 'block';
+}
+</script>
+{% endblock %}

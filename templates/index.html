@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Home - RetailPredict{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
+            <div>
+                <h1><i class="fas fa-leaf"></i> RetailPredict</h1>
+                <p class="hero-subtitle">AI-Powered Price Forecasting for Sri Lankan Retail Markets</p>
+                <p class="hero-description">Leverage advanced machine learning to predict retail prices and understand market trends</p>
+                <div class="hero-buttons">
+                    <a href="/predict" class="btn btn-primary btn-large">
+                        <i class="fas fa-magic"></i> Get Started
+                    </a>
+                    <a href="/explore" class="btn btn-secondary btn-large">
+                        <i class="fas fa-database"></i> Explore Data
+                    </a>
+                </div>
+            </div>
+            <div style="text-align: center; display: flex; justify-content: center; align-items: center;">
+                <img src="/static/images/fruit-market.jpg" alt="Colorful Fruit Market" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <h2><i class="fas fa-chart-bar"></i> Model Performance</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>R² Score</h3>
+                    <p class="stat-value">0.9573</p>
+                    <p class="stat-label">Model Accuracy</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Mean Absolute Error</h3>
+                    <p class="stat-value">₨119.31</p>
+                    <p class="stat-label">Average Prediction Error</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Products Tracked</h3>
+                    <p class="stat-value">{{ stats.total_products or 116 }}</p>
+                    <p class="stat-label">Unique Items</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Data Points</h3>
+                    <p class="stat-value">{{ stats.total_records or '5000+' }}</p>
+                    <p class="stat-label">Training Records</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <h2><i class="fas fa-sparkles"></i> Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-crystal-ball"></i>
+                </div>
+                <h3>Price Prediction</h3>
+                <p>Get accurate price predictions for any product in the Sri Lankan market using our trained CatBoost model.</p>
+                <a href="/predict" class="feature-link">Try it now →</a>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <h3>SHAP Explainability</h3>
+                <p>Understand why predictions are made with SHAP analysis, showing feature importance for each forecast.</p>
+                <a href="/predict" class="feature-link">Learn more →</a>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-area"></i>
+                </div>
+                <h3>Data Exploration</h3>
+                <p>Visualize market trends, price distributions, and patterns across different products and regions.</p>
+                <a href="/explore" class="feature-link">Explore →</a>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3>Machine Learning</h3>
+                <p>Powered by CatBoost, a gradient boosting framework optimized for categorical features and speed.</p>
+                <a href="/about" class="feature-link">Details →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Info Section -->
+    <section class="info-section">
+        <div class="info-card">
+            <h2>📊 About RetailPredict</h2>
+            <p>RetailPredict is an AI-powered application designed to forecast retail prices in Sri Lanka using advanced machine learning techniques. Our CatBoost model has been trained on thousands of data points across various products, markets, and regions.</p>
+            <ul class="info-list">
+                <li><strong>Algorithm:</strong> CatBoost (Gradient Boosting)</li>
+                <li><strong>Accuracy:</strong> 95.73% R² score on test set</li>
+                <li><strong>Features:</strong> Categorical and numeric market factors</li>
+                <li><strong>Explainability:</strong> SHAP values for interpretable predictions</li>
+            </ul>
+        </div>
+    </section>
+</div>
+{% endblock %}
