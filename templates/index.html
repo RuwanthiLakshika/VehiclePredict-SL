@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Home - RetailPredict{% endblock %}
+{% block title %}Home - Vehicle Registration Predictor{% endblock %}
 
 {% block content %}
 <div class="hero-section">
     <div class="hero-content">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
             <div>
-                <h1><i class="fas fa-leaf"></i> RetailPredict</h1>
-                <p class="hero-subtitle">AI-Powered Price Forecasting for Sri Lankan Retail Markets</p>
-                <p class="hero-description">Leverage advanced machine learning to predict retail prices and understand market trends</p>
+                <h1><i class="fas fa-car"></i> Vehicle Registration Predictor</h1>
+                <p class="hero-subtitle">AI-Powered Vehicle Registration Forecasting for Sri Lanka</p>
+                <p class="hero-description">Leverage advanced machine learning to predict vehicle registrations and understand automotive market trends</p>
                 <div class="hero-buttons">
                     <a href="/predict" class="btn btn-primary btn-large">
                         <i class="fas fa-magic"></i> Get Started
@@ -20,7 +20,7 @@
                 </div>
             </div>
             <div style="text-align: center; display: flex; justify-content: center; align-items: center;">
-                <img src="/static/images/fruit-market.jpg" alt="Colorful Fruit Market" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
+                <img src="/static/images/vehicles-showroom.jpg" alt="Vehicle Showroom" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
             </div>
         </div>
     </div>
@@ -37,7 +37,7 @@
                 </div>
                 <div class="stat-content">
                     <h3>R² Score</h3>
-                    <p class="stat-value">0.9573</p>
+                    <p class="stat-value">0.9842</p>
                     <p class="stat-label">Model Accuracy</p>
                 </div>
             </div>
@@ -46,19 +46,19 @@
                     <i class="fas fa-calculator"></i>
                 </div>
                 <div class="stat-content">
-                    <h3>Mean Absolute Error</h3>
-                    <p class="stat-value">₨119.31</p>
-                    <p class="stat-label">Average Prediction Error</p>
+                    <h3>Prediction Error</h3>
+                    <p class="stat-value">±160 vehicles</p>
+                    <p class="stat-label">MAE (~9% median error)</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">
-                    <i class="fas fa-shopping-basket"></i>
+                    <i class="fas fa-car"></i>
                 </div>
                 <div class="stat-content">
-                    <h3>Products Tracked</h3>
-                    <p class="stat-value">{{ stats.total_products or 116 }}</p>
-                    <p class="stat-label">Unique Items</p>
+                    <h3>Categories Tracked</h3>
+                    <p class="stat-value">{{ stats.total_products or 9 }}</p>
+                    <p class="stat-label">Vehicle Types</p>
                 </div>
             </div>
             <div class="stat-card">
@@ -67,8 +67,8 @@
                 </div>
                 <div class="stat-content">
                     <h3>Data Points</h3>
-                    <p class="stat-value">{{ stats.total_records or '5000+' }}</p>
-                    <p class="stat-label">Training Records</p>
+                    <p class="stat-value">{{ stats.total_records or '648' }}</p>
+                    <p class="stat-label">Historical Records</p>
                 </div>
             </div>
         </div>
@@ -82,8 +82,8 @@
                 <div class="feature-icon">
                     <i class="fas fa-crystal-ball"></i>
                 </div>
-                <h3>Price Prediction</h3>
-                <p>Get accurate price predictions for any product in the Sri Lankan market using our trained CatBoost model.</p>
+                <h3>Registration Prediction</h3>
+                <p>Get accurate vehicle registration predictions for Sri Lanka using our trained CatBoost model with Bayesian optimization.</p>
                 <a href="/predict" class="feature-link">Try it now →</a>
             </div>
             <div class="feature-card">
@@ -92,7 +92,7 @@
                 </div>
                 <h3>SHAP Explainability</h3>
                 <p>Understand why predictions are made with SHAP analysis, showing feature importance for each forecast.</p>
-                <a href="/predict" class="feature-link">Learn more →</a>
+                <a href="/explainability" class="feature-link">Learn more →</a>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
@@ -116,13 +116,13 @@
     <!-- Info Section -->
     <section class="info-section">
         <div class="info-card">
-            <h2>📊 About RetailPredict</h2>
-            <p>RetailPredict is an AI-powered application designed to forecast retail prices in Sri Lanka using advanced machine learning techniques. Our CatBoost model has been trained on thousands of data points across various products, markets, and regions.</p>
+            <h2>📊 About Vehicle Registration Predictor</h2>
+            <p>Vehicle Registration Predictor is an AI-powered application designed to forecast vehicle registrations in Sri Lanka using advanced machine learning techniques. Our CatBoost model has been trained on hundreds of data points across various vehicle categories and time periods, optimized with Bayesian hyperparameter tuning for superior accuracy.</p>
             <ul class="info-list">
-                <li><strong>Algorithm:</strong> CatBoost (Gradient Boosting)</li>
-                <li><strong>Accuracy:</strong> 95.73% R² score on test set</li>
-                <li><strong>Features:</strong> Categorical and numeric market factors</li>
-                <li><strong>Explainability:</strong> SHAP values for interpretable predictions</li>
+                <li><strong>Algorithm:</strong> CatBoost with Bayesian Optimization (100 trials)</li>
+                <li><strong>Accuracy:</strong> 98.42% R² score on test set</li>
+                <li><strong>Features:</strong> Market dynamics, seasonal factors, and categorical vehicle types</li>
+                <li><strong>Explainability:</strong> SHAP values show feature importance for each prediction</li>
             </ul>
         </div>
     </section>

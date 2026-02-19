@@ -1,8 +1,10 @@
 """
-SHAP Explainability Analysis - Simple and Clear
+SHAP Explainability Analysis - Vehicle Registration Prediction
 
 This script explains HOW the model makes predictions using SHAP values.
-Focus: Show which features have the most impact on price predictions.
+Focus: Show which features have the most impact on vehicle registration predictions.
+
+Uses CatBoost model optimized via Bayesian Optimization (R² = 0.9760, MAE = 306.68)
 """
 
 import pandas as pd
@@ -46,9 +48,18 @@ def run_shap_analysis():
     # Load data
     print("📊 Loading data...")
     df = pd.read_csv(data_path)
-    X = df.drop(['product_name', 'W4_Jan_2026'], axis=1)
+    
+    # Prepare features (exclude identifiers and target)
+    target_col = 'New_Registration'
+    exclude_cols = ['Standard_Category', 'Month', 'Year', target_col]
+    feature_cols = [col for col in df.columns if col not in exclude_cols]
+    
+    X = df[feature_cols].copy()
     X = X.fillna(X.mean(numeric_only=True))
-    print(f"✓ Data loaded: {X.shape[0]} products, {X.shape[1]} features")
+    y = df[target_col].copy()
+    
+    print(f"✓ Data loaded: {X.shape[0]} records, {X.shape[1]} features")
+    print(f"  Target: {target_col} (Monthly vehicle registrations)")
     
     # Calculate SHAP values
     print("\n🧮 Computing SHAP values...")
@@ -59,7 +70,7 @@ def run_shap_analysis():
     # Feature importance
     print("\n⭐ TOP 10 MOST IMPORTANT FEATURES")
     print("-" * 60)
-    print("These features have the biggest impact on price predictions:\n")
+    print("These features have the biggest impact on registration predictions:\n")
     
     importance = pd.DataFrame({
         'Feature': X.columns,
@@ -68,13 +79,13 @@ def run_shap_analysis():
     
     for i, (_, row) in enumerate(importance.head(10).iterrows(), 1):
         bar = "█" * int(row['Impact'] / importance['Impact'].max() * 30)
-        print(f"{i:2d}. {row['Feature']:20s} {bar} {row['Impact']:.2f}")
+        print(f"{i:2d}. {row['Feature']:30s} {bar} {row['Impact']:.4f}")
     
     # Create visualization
     print("\n📈 Creating visualization...")
     plt.figure(figsize=(10, 6))
     shap.summary_plot(shap_values, X, plot_type="bar", show=False)
-    plt.title("SHAP Summary - Feature Importance", fontsize=14, fontweight='bold')
+    plt.title("SHAP Summary - Vehicle Registration Feature Importance", fontsize=14, fontweight='bold')
     plt.tight_layout()
     
     output_path = os.path.join(os.path.dirname(model_path), 'shap_summary.png')
@@ -83,7 +94,7 @@ def run_shap_analysis():
     print(f"✓ Visualization saved: {output_path}")
     
     # Explain one prediction
-    print("\n🎯 EXPLAINING ONE PRODUCT PREDICTION")
+    print("\n🎯 EXPLAINING ONE REGISTRATION PREDICTION")
     print("-" * 60)
     
     idx = 0
@@ -92,10 +103,10 @@ def run_shap_analysis():
     shap_vals = shap_values[idx]
     features = X.iloc[idx]
     
-    print(f"\nProduct #{idx}")
-    print(f"Predicted Price: {pred:.0f} LKR")
-    print(f"Average Price: {baseline:.0f} LKR")
-    print(f"Difference: {pred - baseline:+.0f} LKR\n")
+    print(f"\nMonth Record #{idx}")
+    print(f"Predicted New Registrations: {pred:.0f} vehicles")
+    print(f"Average Monthly Registrations: {baseline:.0f} vehicles")
+    print(f"Difference from Average: {pred - baseline:+.0f} vehicles\n")
     
     # Top contributors
     contributions = pd.DataFrame({
@@ -104,13 +115,13 @@ def run_shap_analysis():
         'Impact': shap_vals
     }).sort_values('Impact', ascending=False)
     
-    print("Top factors INCREASING the price:")
+    print("Top factors INCREASING registrations:")
     for _, row in contributions[contributions['Impact'] > 0].head(3).iterrows():
-        print(f"  ↑ {row['Feature']:20s} (+{row['Impact']:.0f} LKR)")
+        print(f"  ↑ {row['Feature']:30s} (+{row['Impact']:.0f} vehicles)")
     
-    print("\nTop factors DECREASING the price:")
+    print("\nTop factors DECREASING registrations:")
     for _, row in contributions[contributions['Impact'] < 0].head(3).iterrows():
-        print(f"  ↓ {row['Feature']:20s} ({row['Impact']:.0f} LKR)")
+        print(f"  ↓ {row['Feature']:30s} ({row['Impact']:.0f} vehicles)")
     
     print("\n" + "=" * 60)
     print("✓ ANALYSIS COMPLETE!")

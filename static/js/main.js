@@ -1,10 +1,10 @@
-// RetailPredict - Main JavaScript File
+// Vehicle Registration Predictor - Main JavaScript File
 
 /**
  * Initialize the application on page load
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('RetailPredict App Initialized');
+    console.log('Vehicle Registration Predictor App Initialized');
     initializeEventListeners();
 });
 
@@ -323,7 +323,7 @@ function getQueryParam(param) {
  * Set page title
  */
 function setPageTitle(title) {
-    document.title = title + ' - RetailPredict';
+    document.title = title + ' - Vehicle Registration Predictor';
 }
 
 /**

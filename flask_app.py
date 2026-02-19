@@ -1,12 +1,14 @@
 """
-RetailPredict - Flask Web Application
+Vehicle Registration Predictor - Flask Web Application
 
-Interactive web app for Sri Lankan retail price prediction.
+Interactive web app for Sri Lankan vehicle registration forecasting.
 Features:
-- Real-time price predictions
+- Monthly registration predictions by category
 - SHAP-based explainability
-- Data visualization and exploration
-- Price trend analysis
+- Data visualization and trend analysis
+- Economic impact assessment
+
+Model: Bayesian-Optimized CatBoost with Log-Transform (R² = 0.9842, MAE = 160.10 vehicles/month)
 """
 
 from flask import Flask, render_template, request, jsonify, send_file
@@ -71,7 +73,9 @@ def get_explainer():
         data = load_data()
         if model is not None and data is not None:
             # Use sample for explainer
-            X = data.drop(columns=['Price'], errors='ignore')
+            # Prepare features for SHAP explainer
+            exclude_cols = ['Standard_Category', 'Month', 'Year', 'New_Registration']
+            X = data.drop(columns=exclude_cols, errors='ignore')
             # Select numeric columns only for SHAP
             X_numeric = X.select_dtypes(include=[np.number])
             EXPLAINER = shap.TreeExplainer(model)
@@ -79,17 +83,23 @@ def get_explainer():
 
 
 def prepare_features(data_dict):
-    """Prepare features for prediction."""
+    """Prepare features for vehicle registration prediction."""
     try:
-        # Convert to DataFrame
+        # Define expected features used during training
+        feature_cols = ['Transfer', 'Yearly_Total_Stock', 'Month_Num', 'Quarter', 
+                       'Is_Peak_Season', 'Is_Crisis_Period', 'Transfer_to_New_Ratio',
+                       'New_Registration_Market_Share', 'Prev_Month_New_Reg', 'Monthly_Growth_Rate']
+        
+        # Create DataFrame with input data
         df_input = pd.DataFrame([data_dict])
         
-        # Load training data for scaling/encoding reference
-        data = load_data()
+        # Ensure all required features are present
+        for col in feature_cols:
+            if col not in df_input.columns:
+                df_input[col] = 0.0
         
-        # For now, just return the input - in real scenario align with training features
-        # You'll need to extract the actual feature columns used during training
-        return df_input
+        # Select only the required features in correct order
+        return df_input[feature_cols]
     except Exception as e:
         print(f"Feature preparation error: {e}")
         return None
@@ -103,42 +113,47 @@ def index():
     
     stats = {}
     if data is not None:
-        stats = {
-            'total_products': len(data['Product'].unique()) if 'Product' in data.columns else 0,
-            'total_records': len(data),
-            'avg_price': f"{data['Price'].mean():.2f}" if 'Price' in data.columns else "N/A",
-            'price_range': f"{data['Price'].min():.2f} - {data['Price'].max():.2f}" if 'Price' in data.columns else "N/A"
-        }
+        if 'New_Registration' in data.columns:
+            stats = {
+                'total_months': len(data),
+                'avg_registrations': f"{data['New_Registration'].mean():.0f}",
+                'registration_range': f"{data['New_Registration'].min():.0f} - {data['New_Registration'].max():.0f}",
+                'vehicle_categories': len(data['Standard_Category'].unique()) if 'Standard_Category' in data.columns else 0
+            }
+        else:
+            stats = {'error': 'Data structure not recognized'}
     
     return render_template('index.html', stats=stats, model_loaded=model is not None)
+
+
+@app.route('/explainability')
+def explainability():
+    """SHAP Explainability page."""
+    return render_template('explainability.html')
 
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
     """Prediction page and API endpoint."""
     if request.method == 'GET':
-        # Load data for dropdown options
+        # Load data for form options
         data = load_data()
         
-        products = []
         categories = []
-        perishability = []
         
         if data is not None:
-            if 'product_name' in data.columns:
-                products = sorted(data['product_name'].unique().tolist())
-            if 'category' in data.columns:
-                categories = sorted(data['category'].unique().tolist())
-            if 'perishability' in data.columns:
-                perishability = sorted([x for x in data['perishability'].unique().tolist() if pd.notna(x)])
+            if 'Standard_Category' in data.columns:
+                categories = sorted(data['Standard_Category'].unique().tolist())
         
+        # Note: Year input is now free-form (2026 onwards) for future predictions
+        # Months are hardcoded in template for all 12 months
         return render_template('predict.html', 
-                             products=products,
                              categories=categories,
-                             perishability=perishability)
+                             months=[],  # Not needed - all months in template
+                             years=[])   # Not needed - year is number input field
     
     elif request.method == 'POST':
-        """Make prediction."""
+        """Make prediction for future time periods."""
         try:
             data_dict = request.get_json()
             model = load_model()
@@ -151,8 +166,9 @@ def predict():
             if X is None:
                 return jsonify({'error': 'Invalid input data'}), 400
             
-            # Make prediction
-            prediction = model.predict(X)[0]
+            # Make prediction (model outputs log-scale, inverse transform)
+            prediction_log = model.predict(X)[0]
+            prediction = max(float(np.expm1(prediction_log)), 0)
             
             # Get feature importance for this prediction
             explainer = get_explainer()
@@ -163,22 +179,48 @@ def predict():
                     shap_values = explainer.shap_values(X)
                     feature_names = X.columns.tolist()
                     
-                    # Get top features
+                    # Handle different SHAP output shapes
+                    # shap_values can be: list, 2D array (1, n_features), or 1D array
+                    if isinstance(shap_values, np.ndarray) and shap_values.ndim == 2:
+                        sv = shap_values[0]  # First (only) sample
+                    elif isinstance(shap_values, list):
+                        sv = shap_values[0]
+                    else:
+                        sv = shap_values
+                    
+                    # Human-readable feature labels
+                    label_map = {
+                        'Transfer': 'Vehicle Transfers',
+                        'Yearly_Total_Stock': 'Total Fleet Size',
+                        'Month_Num': 'Month of Year',
+                        'Quarter': 'Quarter',
+                        'Is_Peak_Season': 'Peak Season',
+                        'Is_Crisis_Period': 'Crisis Period',
+                        'Transfer_to_New_Ratio': 'Transfer-to-New Ratio',
+                        'New_Registration_Market_Share': 'Market Share',
+                        'Prev_Month_New_Reg': 'Previous Month Registrations',
+                        'Monthly_Growth_Rate': 'Monthly Growth Rate'
+                    }
+                    
+                    # Get feature importance from SHAP values
                     for i, feat in enumerate(feature_names):
-                        if isinstance(shap_values, list):
-                            importance[feat] = float(np.abs(shap_values[0][i]))
-                        else:
-                            importance[feat] = float(np.abs(shap_values[i]))
+                        label = label_map.get(feat, feat)
+                        importance[label] = float(np.abs(sv[i]))
                     
                     # Sort and get top 5
                     importance = dict(sorted(importance.items(), key=lambda x: x[1], reverse=True)[:5])
                 except Exception as e:
                     print(f"SHAP error: {e}")
+                    import traceback
+                    traceback.print_exc()
                     importance = {}
             
             return jsonify({
                 'success': True,
-                'prediction': round(float(prediction), 2),
+                'prediction': round(float(prediction), 0),
+                'prediction_text': f"{round(float(prediction), 0):.0f} vehicles",
+                'confidence': 'High (±160 vehicles, ~9% median error)',
+                'model_r2': 0.9842,
                 'importance': importance,
                 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             })
@@ -245,26 +287,25 @@ def get_chart(chart_type):
         if data is None:
             return jsonify({'error': 'Data not loaded'}), 400
         
-        if chart_type == 'price_distribution':
-            # Use avg_price column if available
-            price_col = 'avg_price' if 'avg_price' in data.columns else 'Price_2025_01_01'
-            if price_col not in data.columns:
-                return jsonify({'error': f'{price_col} column not found'}), 400
+        elif chart_type == 'registration_distribution':
+            # Show distribution of monthly registrations
+            if 'New_Registration' not in data.columns:
+                return jsonify({'error': 'New_Registration column not found'}), 400
             
-            prices = data[price_col].dropna().tolist()
+            registrations = data['New_Registration'].dropna().tolist()
             
             trace = {
-                'x': prices,
+                'x': registrations,
                 'type': 'histogram',
-                'nbinsx': 50,
-                'marker': {'color': '#0066CC'},
-                'name': 'Price'
+                'nbinsx': 30,
+                'marker': {'color': '#00AA44'},
+                'name': 'Monthly Registrations'
             }
             
             layout = {
-                'title': 'Price Distribution',
-                'xaxis': {'title': 'Price (₨)'},
-                'yaxis': {'title': 'Frequency'},
+                'title': 'Distribution of Monthly Vehicle Registrations',
+                'xaxis': {'title': 'Number of Vehicles'},
+                'yaxis': {'title': 'Frequency (months)'},
                 'hovermode': 'x unified',
                 'template': 'plotly_white',
                 'height': 400,
@@ -272,61 +313,63 @@ def get_chart(chart_type):
                 'plot_bgcolor': 'rgba(240,240,240,0.5)'
             }
             
-        elif chart_type == 'price_by_product':
-            if 'product_name' not in data.columns:
-                return jsonify({'error': 'Product column not found'}), 400
+        elif chart_type == 'registration_by_category':
+            if 'Standard_Category' not in data.columns or 'New_Registration' not in data.columns:
+                return jsonify({'error': 'Category or registration data not found'}), 400
             
-            price_col = 'avg_price' if 'avg_price' in data.columns else 'Price_2025_01_01'
-            
-            # Get top 15 products by price
-            top_data = data.nlargest(15, price_col)[['product_name', price_col]].sort_values(price_col)
+            # Get average registrations by category
+            cat_data = data.groupby('Standard_Category')['New_Registration'].mean().sort_values(ascending=True)
             
             trace = {
-                'x': top_data[price_col].tolist(),
-                'y': top_data['product_name'].tolist(),
+                'x': cat_data.tolist(),
+                'y': cat_data.index.tolist(),
                 'type': 'bar',
                 'orientation': 'h',
-                'marker': {'color': '#0066CC'},
-                'name': 'Average Price'
+                'marker': {'color': '#00AA44'},
+                'name': 'Avg Monthly Registrations'
             }
             
             layout = {
-                'title': 'Top 15 Products by Average Price',
-                'xaxis': {'title': 'Price (₨)'},
-                'yaxis': {'title': 'Product'},
+                'title': 'Average Monthly Registrations by Vehicle Category',
+                'xaxis': {'title': 'Average Registrations'},
+                'yaxis': {'title': 'Vehicle Category'},
                 'hovermode': 'y unified',
                 'template': 'plotly_white',
                 'height': 450,
-                'margin': {'l': 200},
+                'margin': {'l': 150},
                 'paper_bgcolor': 'rgba(0,0,0,0)',
                 'plot_bgcolor': 'rgba(240,240,240,0.5)'
             }
             
-        elif chart_type == 'price_trend':
-            # Get weekly price columns
-            weekly_cols = sorted([col for col in data.columns if col.startswith('W')])
-            if not weekly_cols:
-                return jsonify({'error': 'No weekly price data found'}), 400
+        elif chart_type == 'registration_trend':
+            # Show registration trend over time
+            if 'Year' not in data.columns or 'Month' not in data.columns or 'New_Registration' not in data.columns:
+                return jsonify({'error': 'Time or registration data not found'}), 400
             
-            # Calculate average across products for trend
-            trend_vals = data[weekly_cols].mean().tolist()
+            # Sort by year and month
+            sorted_data = data.sort_values(['Year', 'Month']).groupby(['Year', 'Month']).agg({
+                'New_Registration': 'sum'
+            }).reset_index()
+            
+            # Create time label
+            sorted_data['time'] = sorted_data['Year'].astype(str) + '-' + sorted_data['Month'].astype(str).str.zfill(2)
             
             trace = {
-                'x': list(range(len(trend_vals))),
-                'y': trend_vals,
+                'x': sorted_data['time'].tolist(),
+                'y': sorted_data['New_Registration'].tolist(),
                 'type': 'scatter',
                 'mode': 'lines+markers',
-                'line': {'color': '#0066CC', 'width': 3},
-                'marker': {'size': 8, 'color': '#0066CC'},
-                'name': 'Average Price',
+                'line': {'color': '#00AA44', 'width': 3},
+                'marker': {'size': 6, 'color': '#00AA44'},
+                'name': 'Total Registrations',
                 'fill': 'tozeroy',
-                'fillcolor': 'rgba(0, 102, 204, 0.1)'
+                'fillcolor': 'rgba(0, 170, 68, 0.1)'
             }
             
             layout = {
-                'title': 'Price Trend Over Weeks',
-                'xaxis': {'title': 'Week'},
-                'yaxis': {'title': 'Price (₨)'},
+                'title': 'Vehicle Registration Trend Over Time',
+                'xaxis': {'title': 'Year-Month'},
+                'yaxis': {'title': 'Number of Vehicles'},
                 'hovermode': 'x unified',
                 'template': 'plotly_white',
                 'height': 400,
@@ -354,10 +397,25 @@ def model_info():
         data = load_data()
         
         info = {
-            'algorithm': 'CatBoost (Gradient Boosting)',
+            'algorithm': 'CatBoost (Bayesian Optimized + Log-Transform)',
             'status': 'Loaded' if model is not None else 'Not Found',
-            'features': len(data.columns) - 1 if data is not None else 0,
-            'training_samples': len(data) if data is not None else 0
+            'task': 'Vehicle Registration Forecasting',
+            'r2_score': 0.9842,
+            'mae': 160.10,
+            'median_ape': 8.9,
+            'features': 10,
+            'training_samples': len(data) if data is not None else 0,
+            'optimization': 'Bayesian Optimization (80 trials, Log-Transform + RMSE)',
+            'hyperparameters': {
+                'iterations': 1876,
+                'learning_rate': 0.030562,
+                'depth': 4,
+                'l2_leaf_reg': 0.988819,
+                'subsample': 0.733632,
+                'colsample_bylevel': 0.666635,
+                'random_strength': 5.755841,
+                'min_data_in_leaf': 3
+            }
         }
         
         return jsonify(info)
@@ -400,7 +458,17 @@ if __name__ == '__main__':
     load_model()
     load_data()
     
-    print("🚀 Starting RetailPredict Flask App...")
+    print("="*60)
+    print("🚀 Vehicle Registration Prediction - Flask App")
+    print("="*60)
+    print("✓ Model: CatBoost (Bayesian Optimized + Log-Transform)")
+    print("✓ R² Score: 0.9842 | MAE: ±160.10 vehicles/month | MedAPE: 8.9%")
+    print("✓ Features: 10 | Training Samples: 648")
+    print("="*60)
     print("📍 Navigate to http://localhost:5000")
+    print("📊 API: /api/explore - Data exploration")
+    print("📈 API: /api/chart/registration_trend - Trend analysis")
+    print("🎯 API: /predict - Make predictions")
+    print("="*60)
     
     app.run(debug=True, port=5000)

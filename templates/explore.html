@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Explore - RetailPredict{% endblock %}
+{% block title %}Explore - Vehicle Registration Predictor{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -8,10 +8,10 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
             <div>
                 <h1><i class="fas fa-database"></i> Data Explorer</h1>
-                <p>Visualize market trends and data patterns</p>
+                <p>Visualize vehicle registration trends and patterns</p>
             </div>
             <div style="text-align: center; display: flex; justify-content: center; align-items: center;">
-                <img src="/static/images/market-stall.jpg" alt="Market Stall Display" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
+                <img src="/static/images/auto-marketplace.jpg" alt="Auto Marketplace" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
             </div>
         </div>
     </div>
@@ -20,17 +20,17 @@
     <div class="explorer-container">
         <div class="chart-grid">
             <div class="chart-card">
-                <h3><i class="fas fa-chart-area"></i> Price Distribution</h3>
+                <h3><i class="fas fa-chart-area"></i> Registration Distribution</h3>
                 <div id="priceDistribution"></div>
             </div>
 
             <div class="chart-card">
-                <h3><i class="fas fa-chart-bar"></i> Price by Product</h3>
+                <h3><i class="fas fa-chart-bar"></i> Registration by Category</h3>
                 <div id="priceByProduct"></div>
             </div>
 
             <div class="chart-card">
-                <h3><i class="fas fa-line-chart"></i> Price Trend</h3>
+                <h3><i class="fas fa-line-chart"></i> Registration Trend</h3>
                 <div id="priceTrend"></div>
             </div>
         </div>
@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadCharts() {
-    // Price Distribution
-    fetch('/api/chart/price_distribution')
+    // Registration Distribution
+    fetch('/api/chart/registration_distribution')
         .then(r => r.json())
         .then(data => {
             if (data.error) {
@@ -69,12 +69,12 @@ function loadCharts() {
             }
         })
         .catch(e => {
-            console.error('Error loading price distribution:', e);
+            console.error('Error loading registration distribution:', e);
             document.getElementById('priceDistribution').innerHTML = '<p style="color: #666; padding: 2rem; text-align: center;">⚠️ Unable to load chart</p>';
         });
 
-    // Price by Product
-    fetch('/api/chart/price_by_product')
+    // Registration by Category
+    fetch('/api/chart/registration_by_category')
         .then(r => r.json())
         .then(data => {
             if (data.error) {
@@ -84,12 +84,12 @@ function loadCharts() {
             }
         })
         .catch(e => {
-            console.error('Error loading price by product:', e);
+            console.error('Error loading registration by category:', e);
             document.getElementById('priceByProduct').innerHTML = '<p style="color: #666; padding: 2rem; text-align: center;">⚠️ Unable to load chart</p>';
         });
 
-    // Price Trend
-    fetch('/api/chart/price_trend')
+    // Registration Trend
+    fetch('/api/chart/registration_trend')
         .then(r => r.json())
         .then(data => {
             if (data.error) {
@@ -99,7 +99,7 @@ function loadCharts() {
             }
         })
         .catch(e => {
-            console.error('Error loading price trend:', e);
+            console.error('Error loading registration trend:', e);
             document.getElementById('priceTrend').innerHTML = '<p style="color: #666; padding: 2rem; text-align: center;">⚠️ Unable to load chart</p>';
         });
 }

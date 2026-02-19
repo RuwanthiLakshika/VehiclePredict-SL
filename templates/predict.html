@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Predict - RetailPredict{% endblock %}
+{% block title %}Predict - Vehicle Registration Predictor{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="page-header">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
             <div>
-                <h1><i class="fas fa-wand-magic-sparkles"></i> Price Prediction</h1>
-                <p>Enter product details to get AI-powered price predictions with explainability</p>
+                <h1><i class="fas fa-wand-magic-sparkles"></i> Registration Prediction</h1>
+                <p>Enter market conditions for future periods to forecast vehicle registrations with explainability</p>
             </div>
             <div style="text-align: center; display: flex; justify-content: center; align-items: center;">
-                <img src="/static/images/produce-market.jpg" alt="Fresh Produce Market" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
+                <img src="/static/images/motorcycle-dealership.jpg" alt="Motorcycle Dealership" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
             </div>
         </div>
     </div>
@@ -20,22 +20,41 @@
         <!-- Input Form -->
         <div class="form-section">
             <div class="form-card">
-                <h2><i class="fas fa-edit"></i> Input Features</h2>
+                <h2><i class="fas fa-edit"></i> Future Market Forecast Parameters</h2>
+                <p style="color: #666; margin-bottom: 1.5rem;"><i class="fas fa-info-circle"></i> <strong>Simple mode:</strong> Enter a few key factors, we'll estimate the rest based on historical patterns</p>
                 <form id="predictionForm">
+                    <!-- Row 1: Time Selection -->
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="product">Product *</label>
-                            <select id="product" name="product_name" required>
-                                <option value="">Select a product...</option>
-                                {% for product in products %}
-                                <option value="{{ product }}">{{ product }}</option>
-                                {% endfor %}
-                            </select>
+                            <label for="year">Year (2026 onwards) *</label>
+                            <input type="number" id="year" name="Year" min="2026" max="2035" value="2026" required>
                         </div>
                         <div class="form-group">
-                            <label for="category">Category *</label>
-                            <select id="category" name="category" required>
-                                <option value="">Select a category...</option>
+                            <label for="month">Month *</label>
+                            <select id="month" name="Month" required onchange="updateQuarter()">
+                                <option value="">Select a month...</option>
+                                <option value="Jan">January</option>
+                                <option value="Feb">February</option>
+                                <option value="Mar">March</option>
+                                <option value="Apr">April</option>
+                                <option value="May">May</option>
+                                <option value="Jun">June</option>
+                                <option value="Jul">July</option>
+                                <option value="Aug">August</option>
+                                <option value="Sep">September</option>
+                                <option value="Oct">October</option>
+                                <option value="Nov">November</option>
+                                <option value="Dec">December</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Vehicle Category -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category">Vehicle Category *</label>
+                            <select id="category" name="Standard_Category" required onchange="updateDefaults()">
+                                <option value="">Select a vehicle category...</option>
                                 {% for category in categories %}
                                 <option value="{{ category }}">{{ category }}</option>
                                 {% endfor %}
@@ -43,40 +62,58 @@
                         </div>
                     </div>
 
+                    <!-- Row 3: Market Conditions (Key Inputs) -->
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="perishability">Perishability *</label>
-                            <select id="perishability" name="perishability" required>
-                                <option value="">Select perishability level...</option>
-                                {% for item in perishability %}
-                                <option value="{{ item }}">{{ item }}</option>
-                                {% endfor %}
+                            <label for="prev_month">Previous Month Registrations *</label>
+                            <input type="number" id="prev_month" name="Prev_Month_New_Reg" step="1" min="0" value="2500" required>
+                            <small style="color: #666;">Current month's registrations (starting point)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="growth_rate">Expected Growth Rate (%) *</label>
+                            <input type="number" id="growth_rate" name="Monthly_Growth_Rate" step="0.1" min="-50" max="50" value="5" required>
+                            <small style="color: #666;">Month-over-month growth expectation</small>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Seasonal & Economic Factors -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="peak">Peak Season? *</label>
+                            <select id="peak" name="Is_Peak_Season" required>
+                                <option value="0">No - Normal Period</option>
+                                <option value="1">Yes - Peak Buying Season</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="volatility">Price Volatility (0-100) *</label>
-                            <input type="number" id="volatility" name="price_volatility" step="0.01" min="0" max="100" required>
+                            <label for="crisis">Crisis Period? *</label>
+                            <select id="crisis" name="Is_Crisis_Period" required>
+                                <option value="0">No - Stable Economy</option>
+                                <option value="1">Yes - Economic Crisis</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="price_range">Price Range (₨) *</label>
-                            <input type="number" id="price_range" name="price_range" step="0.01" min="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="avg_price">Average Price (₨) *</label>
-                            <input type="number" id="avg_price" name="avg_price" step="0.01" min="0" required>
-                        </div>
-                    </div>
+                    <!-- Hidden fields - Auto-calculated -->
+                    <input type="hidden" id="month_num" name="Month_Num" value="6">
+                    <input type="hidden" id="quarter" name="Quarter" value="2">
+                    <input type="hidden" id="transfer" name="Transfer" value="50">
+                    <input type="hidden" id="stock" name="Yearly_Total_Stock" value="50000">
+                    <input type="hidden" id="transfer_ratio" name="Transfer_to_New_Ratio" value="0.15">
+                    <input type="hidden" id="market_share" name="New_Registration_Market_Share" value="12">
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary btn-large">
-                            <i class="fas fa-sparkles"></i> Get Prediction
+                            <i class="fas fa-sparkles"></i> Forecast Registrations
                         </button>
                         <button type="reset" class="btn btn-secondary">
                             <i class="fas fa-redo"></i> Clear
                         </button>
+                    </div>
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f0f4ff; border-radius: 8px; border-left: 4px solid #0066CC;">
+                        <p style="margin: 0; font-size: 0.9rem; color: #333;">
+                            <strong>💡 How it works:</strong> Enter future year (2026 onwards), month, vehicle category, and market conditions. The AI model will forecast expected vehicle registrations for that period based on learned patterns from 2018-2025 data.
+                        </p>
                     </div>
                 </form>
             </div>
@@ -86,16 +123,16 @@
         <div class="results-section" id="resultsSection" style="display: none;">
             <div class="prediction-card">
                 <div class="prediction-header">
-                    <h2><i class="fas fa-check-circle"></i> Prediction Results</h2>
+                    <h2><i class="fas fa-check-circle"></i> Registration Forecast</h2>
                     <span class="timestamp" id="timestamp"></span>
                 </div>
 
                 <!-- Main Prediction -->
                 <div class="prediction-result">
                     <div class="predicted-price">
-                        <p class="price-label">Predicted Price</p>
-                        <h1 id="predictedPrice">₨ 0.00</h1>
-                        <p class="price-note">Based on CatBoost AI model</p>
+                        <p class="price-label">Predicted Monthly Registrations</p>
+                        <h1 id="predictedPrice">0 vehicles</h1>
+                        <p class="price-note">Based on Bayesian-Optimized CatBoost Model (R² = 0.9842)</p>
                     </div>
                 </div>
 
@@ -109,7 +146,7 @@
 
                 <!-- Error Info -->
                 <div class="info-box">
-                    <p><i class="fas fa-info-circle"></i> <strong>Note:</strong> Predictions are based on historical market data and may vary based on real-time market conditions.</p>
+                    <p><i class="fas fa-info-circle"></i> <strong>Note:</strong> Predictions are based on historical vehicle registration data and market patterns. Actual registrations may vary.</p>
                 </div>
             </div>
         </div>
@@ -128,12 +165,67 @@
 </div>
 
 <script>
+// Auto-calculate quarter based on selected month
+function updateQuarter() {
+    const monthMap = {
+        'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+        'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+    };
+    
+    const monthName = document.getElementById('month').value;
+    if (monthName) {
+        const monthNum = monthMap[monthName];
+        document.getElementById('month_num').value = monthNum;
+        document.getElementById('quarter').value = Math.ceil(monthNum / 3);
+    }
+}
+
+// Set smart defaults based on selected vehicle category
+function updateDefaults() {
+    const category = document.getElementById('category').value;
+    
+    // Default values by category (based on dataset analysis - means of actual data)
+    const defaults = {
+        'Bus': { prev: 118, growth: 2, stock: 57859, transfer: 1037, ratio: 8.8, share: 0.01 },
+        'Motor Cycle': { prev: 16723, growth: 5, stock: 1569283, transfer: 15254, ratio: 0.91, share: 0.60 },
+        'Motor Car': { prev: 3251, growth: 4, stock: 486196, transfer: 9455, ratio: 2.9, share: 0.12 },
+        'Lorry': { prev: 338, growth: 3, stock: 5019, transfer: 2353, ratio: 6.96, share: 0.03 },
+        'Tractor': { prev: 907, growth: 2, stock: 3157, transfer: 722, ratio: 0.8, share: 0.15 },
+        'Three Wheeler': { prev: 941, growth: 5, stock: 0, transfer: 10567, ratio: 11.2, share: 0.04 },
+        'Other': { prev: 460, growth: 3, stock: 94514, transfer: 2018, ratio: 4.39, share: 0.03 },
+        'Dual Purpose': { prev: 427, growth: 3, stock: 227015, transfer: 2968, ratio: 6.95, share: 0.02 },
+        'Prime Mover': { prev: 30, growth: 1, stock: 3811, transfer: 45, ratio: 1.5, share: 0.01 }
+    };
+    
+    if (defaults[category]) {
+        const d = defaults[category];
+        document.getElementById('prev_month').value = d.prev;
+        document.getElementById('growth_rate').value = d.growth;
+        document.getElementById('stock').value = d.stock;
+        document.getElementById('transfer').value = d.transfer;
+        document.getElementById('transfer_ratio').value = d.ratio.toFixed(2);
+        document.getElementById('market_share').value = d.share.toFixed(2);
+    }
+}
+
 document.getElementById('predictionForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     // Collect form data
     const formData = new FormData(this);
     const data = Object.fromEntries(formData);
+    
+    // Convert string values to numbers
+    data.Transfer = parseFloat(data.Transfer) || 0;
+    data.Yearly_Total_Stock = parseFloat(data.Yearly_Total_Stock) || 50000;
+    data.Month_Num = parseInt(data.Month_Num) || 6;
+    data.Quarter = parseInt(data.Quarter) || 2;
+    data.Is_Peak_Season = parseInt(data.Is_Peak_Season) || 0;
+    data.Is_Crisis_Period = parseInt(data.Is_Crisis_Period) || 0;
+    data.Transfer_to_New_Ratio = parseFloat(data.Transfer_to_New_Ratio) || 0.15;
+    data.New_Registration_Market_Share = parseFloat(data.New_Registration_Market_Share) || 12;
+    data.Prev_Month_New_Reg = parseFloat(data.Prev_Month_New_Reg) || 2500;
+    data.Monthly_Growth_Rate = parseFloat(data.Monthly_Growth_Rate) || 5;
 
     try {
         // Show loading state
@@ -152,14 +244,15 @@ document.getElementById('predictionForm').addEventListener('submit', async funct
 
         if (result.success) {
             // Display results
-            document.getElementById('predictedPrice').textContent = '₨ ' + result.prediction.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const registrations = Math.round(result.prediction);
+            document.getElementById('predictedPrice').textContent = registrations.toLocaleString() + ' vehicles';
             document.getElementById('timestamp').textContent = 'Predicted on ' + result.timestamp;
 
             // Display feature importance
             displayImportance(result.importance);
 
             document.getElementById('resultsSection').style.display = 'block';
-            resultsSection.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
         } else {
             showError(result.error || 'Prediction failed');
         }
@@ -169,31 +262,31 @@ document.getElementById('predictionForm').addEventListener('submit', async funct
 });
 
 function displayImportance(importance) {
-    const features = Object.keys(importance);
-    const values = Object.values(importance);
-
-    if (features.length === 0) {
+    if (!importance || Object.keys(importance).length === 0) {
         document.getElementById('importanceChart').innerHTML = '<p>No feature importance data available</p>';
         return;
     }
+
+    const features = Object.keys(importance);
+    const values = Object.values(importance);
 
     const trace = {
         x: values,
         y: features,
         type: 'bar',
         orientation: 'h',
-        marker: { color: '#0066CC' }
+        marker: { color: '#00AA44' }
     };
 
     const layout = {
-        margin: { l: 150 },
-        xaxis: { title: 'SHAP Impact' },
-        height: 300,
+        margin: { l: 200 },
+        xaxis: { title: 'Impact on Prediction' },
+        height: 400,
         paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)'
+        plot_bgcolor: 'rgba(240,240,240,0.5)'
     };
 
-    Plotly.newPlot('importanceChart', [trace], layout, { responsive: true });
+    Plotly.newPlot('importanceChart', [trace], layout, { responsive: true, displayModeBar: false });
 }
 
 function showError(message) {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}RetailPredict{% endblock %}</title>
+    <title>{% block title %}Vehicle Registration Predictor{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -14,8 +14,8 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <i class="fas fa-chart-line"></i>
-                <span>RetailPredict</span>
+                <i class="fas fa-car"></i>
+                <span>VehiclePredict-SL</span>
             </div>
             <div class="nav-menu">
                 <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">
@@ -23,6 +23,9 @@
                 </a>
                 <a href="/predict" class="nav-link {% if request.path == '/predict' %}active{% endif %}">
                     <i class="fas fa-magic"></i> Predict
+                </a>
+                <a href="/explainability" class="nav-link {% if request.path == '/explainability' %}active{% endif %}">
+                    <i class="fas fa-lightbulb"></i> Explainability
                 </a>
                 <a href="/explore" class="nav-link {% if request.path == '/explore' %}active{% endif %}">
                     <i class="fas fa-database"></i> Explore
@@ -42,7 +45,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <p>&copy; 2024 RetailPredict - AI-Powered Price Forecasting for Sri Lankan Markets</p>
+            <p>&copy; 2024 Vehicle Registration Predictor - AI-Powered Vehicle Registration Forecasting for Sri Lanka</p>
             <p><small>Built with Flask, CatBoost & SHAP</small></p>
         </div>
     </footer>

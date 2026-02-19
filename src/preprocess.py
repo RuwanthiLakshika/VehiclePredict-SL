@@ -1,320 +1,289 @@
 """
-Preprocessing Script for RetailPredict Dataset
+Preprocessing Script for Automotive Dataset - Sri Lanka
 
 This script handles:
-1. Data Integration: Merge 23 separate Excel files into unified dataset
-2. Cleaning: Remove metadata noise and convert currency/text strings to floats
-3. Imputation: Handle missing values ("-") with category-based averages
-4. Feature Engineering: Apply categorization by market behavior (perishability)
+1. Data Load: Read automotive CSV dataset
+2. Data Cleaning: Remove anomalies, handle missing values
+3. Feature Engineering: Create derived metrics for model training
+4. Data Validation: Ensure data quality and consistency
+
+Source: Department of Motor Traffic (DMT), Sri Lanka Government
+Data includes: New Vehicle Registrations, Transfers, Vehicle Population
 """
 
 import pandas as pd
 import numpy as np
 import os
-import glob
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 warnings.filterwarnings('ignore')
 
 
-class DataPreprocessor:
-    """Handle all preprocessing steps for the retail dataset."""
+class AutomotiveDataPreprocessor:
+    """Handle all preprocessing steps for the automotive dataset."""
     
     def __init__(self, raw_data_path, output_path):
         """
         Initialize the preprocessor.
         
         Args:
-            raw_data_path: Path to directory containing raw CSV files
-            output_path: Path to save the master dataset
+            raw_data_path: Path to raw automotive CSV file
+            output_path: Path to save the processed master dataset
         """
         self.raw_data_path = raw_data_path
         self.output_path = output_path
         self.df = None
-        
-        # Define perishability categories for feature engineering
-        self.perishability_mapping = {
-            'perishable': ['fresh', 'dairy', 'meat', 'fish', 'fruits', 'vegetables', 'bakery'],
-            'semi-perishable': ['frozen', 'refrigerated'],
-            'non-perishable': ['canned', 'dry', 'beverages', 'snacks', 'grains', 'spices']
-        }
+        self.df_processed = None
     
-    def load_and_merge_files(self):
+    def load_data(self):
         """
-        Step 1: Data Integration
-        Merge all CSV files from the raw data directory.
+        Step 1: Data Loading
+        Load the automotive dataset from CSV.
         
         Returns:
-            pd.DataFrame: Merged dataset
+            pd.DataFrame: Loaded raw dataset
         """
-        print("Step 1: Data Integration - Loading and merging files...")
+        print("Step 1: Data Loading...")
         
-        # Find all CSV files in raw data directory
-        csv_files = glob.glob(os.path.join(self.raw_data_path, '*.csv'))
+        if not os.path.exists(self.raw_data_path):
+            raise FileNotFoundError(f"Dataset not found at {self.raw_data_path}")
         
-        if not csv_files:
-            print(f"Warning: No CSV files found in {self.raw_data_path}")
-            print("Creating sample dataset for demonstration...")
-            self.df = self._create_sample_data()
-            return self.df
-        
-        dataframes = []
-        for file_path in csv_files:
-            try:
-                df_temp = pd.read_csv(file_path)
-                dataframes.append(df_temp)
-                print(f"  Loaded: {os.path.basename(file_path)} - Shape: {df_temp.shape}")
-            except Exception as e:
-                print(f"  Error loading {file_path}: {str(e)}")
-        
-        # Concatenate all dataframes
-        self.df = pd.concat(dataframes, ignore_index=True)
-        
-        print(f"✓ Merged dataset shape: {self.df.shape}")
-        print(f"✓ Total unique products: {self.df['product_name'].nunique() if 'product_name' in self.df.columns else 'N/A'}")
+        self.df = pd.read_csv(self.raw_data_path)
+        print(f"✓ Dataset loaded: {self.df.shape}")
+        print(f"  Columns: {list(self.df.columns)}")
+        print(f"\n  Data Overview:")
+        print(f"    Year range: {self.df['Year'].min()} - {self.df['Year'].max()}")
+        print(f"    Categories: {self.df['Standard_Category'].unique().tolist()}")
+        print(f"    Total records: {len(self.df)}")
         
         return self.df
     
     def clean_data(self):
         """
         Step 2: Data Cleaning
-        Remove metadata noise and convert currency/text strings to floats.
+        Remove duplicates, handle missing values, validate data types.
         """
         print("\nStep 2: Data Cleaning...")
         
         if self.df is None:
-            raise ValueError("No data loaded. Call load_and_merge_files() first.")
+            raise ValueError("No data loaded. Call load_data() first.")
         
         # Remove duplicate rows
         initial_rows = len(self.df)
         self.df = self.df.drop_duplicates()
         print(f"  Removed duplicates: {initial_rows - len(self.df)} rows")
         
-        # Remove rows where all values are NaN (except Product/Category)
-        self.df = self.df.dropna(how='all', subset=[col for col in self.df.columns if col not in ['Product', 'Category']])
+        # Check for missing values
+        missing_counts = self.df.isnull().sum()
+        if missing_counts.sum() > 0:
+            print(f"  Missing values found:")
+            for col, count in missing_counts[missing_counts > 0].items():
+                print(f"    {col}: {count}")
+        else:
+            print(f"  ✓ No missing values")
         
-        # Rename columns for consistency
-        if 'Product' in self.df.columns:
-            self.df.rename(columns={'Product': 'product_name'}, inplace=True)
-        if 'Category' in self.df.columns:
-            self.df.rename(columns={'Category': 'category'}, inplace=True)
-        
-        # Handle currency/text to numeric conversion for all non-string columns
-        for col in self.df.columns:
-            if col not in ['product_name', 'category']:
-                # Convert to numeric, treating '-', '', and NaN as missing
-                self.df[col] = self.df[col].astype(str).str.strip()
-                self.df[col] = self.df[col].replace(['', '-', 'nan'], np.nan)
+        # Ensure numeric columns are proper types
+        numeric_cols = ['Year', 'Month_Num', 'Quarter', 'New_Registration', 
+                       'Transfer', 'Yearly_Total_Stock', 'Prev_Month_New_Reg']
+        for col in numeric_cols:
+            if col in self.df.columns:
                 self.df[col] = pd.to_numeric(self.df[col], errors='coerce')
         
-        print(f"✓ Data cleaning completed")
-        missing_counts = self.df.isnull().sum()
-        print(f"  Missing values by column:")
-        for col, count in missing_counts[missing_counts > 0].items():
-            print(f"    {col}: {count}")
+        # Remove any rows with critical missing values
+        self.df = self.df.dropna(subset=['Year', 'Month_Num', 'New_Registration'])
+        
+        print(f"✓ Data cleaning completed. Final shape: {self.df.shape}")
         
         return self.df
     
-    def impute_missing_values(self):
+    def validate_data(self):
         """
-        Step 3: Missing Value Imputation
-        Handle missing values ("-") with category-based averages.
+        Step 3: Data Validation
+        Validate data consistency and logical constraints.
         """
-        print("\nStep 3: Imputation - Handling missing values...")
+        print("\nStep 3: Data Validation...")
         
-        if self.df is None:
-            raise ValueError("No data loaded. Call load_and_merge_files() first.")
+        # Check year range
+        year_min, year_max = self.df['Year'].min(), self.df['Year'].max()
+        print(f"  Year range: {year_min} - {year_max}")
         
-        # Identify category column
-        category_col = 'category' if 'category' in self.df.columns else None
-        
-        # Identify numeric columns for imputation (exclude product_name and category)
-        numeric_cols = [col for col in self.df.columns if col not in ['product_name', 'category']]
-        numeric_cols = [col for col in numeric_cols if self.df[col].dtype in [np.float64, np.int64, np.int32]]
-        
-        print(f"  Category column: {category_col}")
-        print(f"  Numeric columns for imputation: {len(numeric_cols)}")
-        
-        # Impute missing values with category-based mean
-        if category_col:
-            for col in numeric_cols:
-                missing_count = self.df[col].isnull().sum()
-                if missing_count > 0:
-                    # Calculate category-based mean
-                    category_means = self.df.groupby(category_col)[col].transform('mean')
-                    self.df[col].fillna(category_means, inplace=True)
-                    
-                    # Fill remaining NaN with overall mean
-                    remaining_na = self.df[col].isnull().sum()
-                    if remaining_na > 0:
-                        overall_mean = self.df[col].mean()
-                        self.df[col].fillna(overall_mean, inplace=True)
-                        print(f"  Imputed {missing_count} missing values in '{col}'")
+        # Check month numbers
+        month_range = self.df['Month_Num'].unique()
+        if set(month_range) <= set(range(1, 13)):
+            print(f"  ✓ Month numbers valid: {sorted(month_range)}")
         else:
-            # If no category column, use overall mean
-            for col in numeric_cols:
-                missing_count = self.df[col].isnull().sum()
-                if missing_count > 0:
-                    mean_val = self.df[col].mean()
-                    self.df[col].fillna(mean_val, inplace=True)
-                    print(f"  Imputed {missing_count} missing values in '{col}' with mean: {mean_val:.2f}")
+            print(f"  ✗ Invalid month numbers found: {month_range}")
         
-        print(f"✓ Imputation completed")
-        print(f"  Remaining missing values: {self.df.isnull().sum().sum()}")
+        # Check positive values
+        cols_positive = ['New_Registration', 'Transfer', 'Yearly_Total_Stock']
+        for col in cols_positive:
+            if col in self.df.columns:
+                negative_count = (self.df[col] < 0).sum()
+                if negative_count > 0:
+                    print(f"  ✗ {col}: {negative_count} negative values found")
+                else:
+                    print(f"  ✓ {col}: All values positive")
+        
+        # Check for outliers
+        print(f"\n  Value Ranges:")
+        print(f"    New_Registration: {self.df['New_Registration'].min():.0f} - {self.df['New_Registration'].max():.0f}")
+        print(f"    Transfer: {self.df['Transfer'].min():.0f} - {self.df['Transfer'].max():.0f}")
+        print(f"    Yearly_Total_Stock: {self.df['Yearly_Total_Stock'].min():.0f} - {self.df['Yearly_Total_Stock'].max():.0f}")
         
         return self.df
     
-    def feature_engineering(self):
+    def engineer_features(self):
         """
         Step 4: Feature Engineering
-        Create categorization features based on price behavior and perishability.
+        Create derived features for enhanced model training.
         """
         print("\nStep 4: Feature Engineering...")
         
-        if self.df is None:
-            raise ValueError("No data loaded. Call load_and_merge_files() first.")
+        # Create month name if not present
+        if 'Month' not in self.df.columns:
+            month_names = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
+                          7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
+            self.df['Month'] = self.df['Month_Num'].map(month_names)
         
-        # Get all price columns (weeks and baseline)
-        price_cols = [col for col in self.df.columns if col.startswith('W') or 'Price' in col or 'price' in col]
+        # Seasonality features (already present as Is_Peak_Season, Is_Crisis_Period)
+        # Verify they exist, if not create them
+        if 'Is_Peak_Season' not in self.df.columns:
+            # Peak season: April, May, November, December
+            peak_months = [4, 5, 11, 12]
+            self.df['Is_Peak_Season'] = self.df['Month_Num'].isin(peak_months).astype(int)
         
-        # Create average price feature
-        if price_cols:
-            self.df['avg_price'] = self.df[price_cols].mean(axis=1)
-            print(f"  Created 'avg_price' from {len(price_cols)} price columns")
+        if 'Is_Crisis_Period' not in self.df.columns:
+            # Crisis periods: 2022-2023 (economic crisis)
+            self.df['Is_Crisis_Period'] = ((self.df['Year'] >= 2022) & (self.df['Year'] <= 2023)).astype(int)
         
-        # Create price volatility feature (standard deviation of prices)
-        if len(price_cols) > 1:
-            self.df['price_volatility'] = self.df[price_cols].std(axis=1)
-            print(f"  Created 'price_volatility' measure")
+        # Ratio features (verify existence)
+        if 'Transfer_to_New_Ratio' not in self.df.columns:
+            self.df['Transfer_to_New_Ratio'] = self.df['Transfer'] / (self.df['New_Registration'] + 1)
         
-        # Create price range (max - min)
-        if len(price_cols) > 1:
-            self.df['price_range'] = self.df[price_cols].max(axis=1) - self.df[price_cols].min(axis=1)
-            print(f"  Created 'price_range' feature")
+        if 'New_Registration_Market_Share' not in self.df.columns:
+            # Market share by category per month
+            self.df = self.df.sort_values(['Year', 'Month_Num'])
+            monthly_totals = self.df.groupby(['Year', 'Month_Num'])['New_Registration'].transform('sum')
+            self.df['New_Registration_Market_Share'] = self.df['New_Registration'] / (monthly_totals + 1)
         
-        # Create price categories based on average price
-        if 'avg_price' in self.df.columns:
-            self.df['price_category'] = pd.qcut(
-                self.df['avg_price'], 
-                q=3, 
-                labels=['low', 'medium', 'high'],
-                duplicates='drop'
-            )
-            print(f"  Created 'price_category' (low, medium, high)")
+        if 'Monthly_Growth_Rate' not in self.df.columns:
+            # Month-over-month growth rate
+            self.df = self.df.sort_values(['Standard_Category', 'Year', 'Month_Num'])
+            self.df['Monthly_Growth_Rate'] = self.df.groupby('Standard_Category')['New_Registration'].pct_change()
         
-        # Create perishability feature based on product category
-        if 'category' in self.df.columns:
-            def get_perishability(cat):
-                cat_lower = str(cat).lower()
-                if any(x in cat_lower for x in ['fruit', 'vegetable', 'dairy', 'meat', 'fish', 'egg', 'bakery', 'leafy']):
-                    return 'perishable'
-                elif any(x in cat_lower for x in ['frozen', 'refrigerated']):
-                    return 'semi-perishable'
-                else:
-                    return 'non-perishable'
-            
-            self.df['perishability'] = self.df['category'].apply(get_perishability)
-            print(f"  Created 'perishability' feature based on category")
+        if 'Prev_Month_New_Reg' not in self.df.columns:
+            # Previous month's registrations
+            self.df['Prev_Month_New_Reg'] = self.df.groupby('Standard_Category')['New_Registration'].shift(1)
         
-        # Handle Change_Ann and Change_Wk if they exist
-        if 'Change_Ann' in self.df.columns:
-            self.df.rename(columns={'Change_Ann': 'annual_change'}, inplace=True)
-        if 'Change_Wk' in self.df.columns:
-            self.df.rename(columns={'Change_Wk': 'weekly_change'}, inplace=True)
+        # Fill NaN in derived features
+        self.df['Monthly_Growth_Rate'].fillna(0, inplace=True)
+        self.df['Prev_Month_New_Reg'].fillna(0, inplace=True)
         
         print(f"✓ Feature engineering completed")
-        print(f"  New features created: {[col for col in self.df.columns if col in ['avg_price', 'price_volatility', 'price_range', 'price_category', 'perishability']]}")
+        print(f"  Created/Verified features:")
+        print(f"    - Seasonality: Is_Peak_Season, Is_Crisis_Period")
+        print(f"    - Ratios: Transfer_to_New_Ratio, New_Registration_Market_Share")
+        print(f"    - Trends: Monthly_Growth_Rate, Prev_Month_New_Reg")
+        print(f"  Final shape: {self.df.shape}")
         
         return self.df
     
-    def _create_sample_data(self):
-        """Create sample data for demonstration if no files are found."""
-        print("  Creating sample dataset...")
+    def generate_statistics(self):
+        """
+        Step 5: Generate Descriptive Statistics
+        Provide insights into the data distribution.
+        """
+        print("\nStep 5: Data Statistics and Insights...")
         
-        categories = ['Fresh Produce', 'Dairy', 'Meat & Fish', 'Beverages', 'Snacks', 
-                     'Frozen Foods', 'Bakery', 'Canned Goods', 'Dry Goods', 'Spices', 'Other']
+        print(f"\n  New Registrations by Category:")
+        category_stats = self.df.groupby('Standard_Category')['New_Registration'].agg(['count', 'mean', 'std', 'min', 'max'])
+        print(category_stats.round(2))
         
-        np.random.seed(42)
-        data = {
-            'product_name': [f'Product_{i}' for i in range(122)],
-            'category': np.random.choice(categories, 122),
-            'price': np.random.uniform(1, 500, 122),
-            'quantity': np.random.randint(1, 1000, 122),
-            'expiry_days': np.random.choice([np.nan, 7, 14, 30, 60, 180, 365], 122),
-            'rating': np.random.uniform(2, 5, 122)
-        }
+        print(f"\n  Vehicle Category Distribution:")
+        print(f"    Categories: {sorted(self.df['Standard_Category'].unique())}")
+        print(f"    Total categories: {self.df['Standard_Category'].nunique()}")
         
-        return pd.DataFrame(data)
+        print(f"\n  Year Coverage:")
+        years = sorted(self.df['Year'].unique())
+        print(f"    Years: {years}")
+        print(f"    Records per year: {self.df['Year'].value_counts().sort_index().to_dict()}")
+        
+        return self.df
     
-    def save_master_dataset(self):
-        """Save the processed dataset to CSV."""
-        print("\nSaving master dataset...")
+    def save_processed_data(self):
+        """
+        Step 6: Save Processed Data
+        Save the cleaned and engineered dataset to CSV.
+        """
+        print("\nStep 6: Saving Processed Data...")
         
-        if self.df is None:
-            raise ValueError("No data to save. Run preprocessing steps first.")
-        
-        # Create output directory if it doesn't exist
+        # Ensure output directory exists
         os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
         
+        # Save to CSV
         self.df.to_csv(self.output_path, index=False)
-        print(f"✓ Master dataset saved to: {self.output_path}")
-        print(f"  Final shape: {self.df.shape}")
+        print(f"✓ Processed dataset saved to: {self.output_path}")
+        print(f"  Final dataset shape: {self.df.shape}")
         print(f"  Columns: {list(self.df.columns)}")
         
-        return self.output_path
+        # Save summary statistics
+        summary_path = self.output_path.replace('.csv', '_summary.txt')
+        with open(summary_path, 'w') as f:
+            f.write("AUTOMOTIVE DATASET SUMMARY\n")
+            f.write("=" * 50 + "\n\n")
+            f.write(f"Dataset Shape: {self.df.shape}\n\n")
+            f.write(f"Columns:\n{chr(10).join(['  - ' + col for col in self.df.columns])}\n\n")
+            f.write(f"Data Types:\n{self.df.dtypes.to_string()}\n\n")
+            f.write(f"Missing Values:\n{self.df.isnull().sum().to_string()}\n\n")
+            f.write(f"Statistical Summary:\n{self.df.describe().to_string()}\n")
+        
+        print(f"✓ Summary statistics saved to: {summary_path}")
+        
+        return self.df
     
-    def get_summary_statistics(self):
-        """Print summary statistics of the processed data."""
-        print("\n" + "="*60)
-        print("PREPROCESSING SUMMARY STATISTICS")
-        print("="*60)
+    def preprocess_pipeline(self):
+        """Execute the complete preprocessing pipeline."""
+        print("=" * 60)
+        print("AUTOMOTIVE DATASET PREPROCESSING PIPELINE")
+        print("=" * 60)
         
-        print(f"\nDataset Shape: {self.df.shape}")
-        print(f"  Rows (Records): {self.df.shape[0]}")
-        print(f"  Columns (Features): {self.df.shape[1]}")
-        
-        print("\nData Types:")
-        print(self.df.dtypes)
-        
-        print("\nNumerical Summary:")
-        print(self.df.describe())
-        
-        print("\nCategorical Features:")
-        for col in self.df.select_dtypes(include=['object']).columns:
-            print(f"  {col}: {self.df[col].nunique()} unique values")
-        
-        print("="*60 + "\n")
+        try:
+            # Execute pipeline steps
+            self.load_data()
+            self.clean_data()
+            self.validate_data()
+            self.engineer_features()
+            self.generate_statistics()
+            self.save_processed_data()
+            
+            print("\n" + "=" * 60)
+            print("✓ PREPROCESSING PIPELINE COMPLETED SUCCESSFULLY!")
+            print("=" * 60)
+            print(f"\nDataset Ready for Model Training:")
+            print(f"  Path: {self.output_path}")
+            print(f"  Shape: {self.df.shape}")
+            print(f"  Features: {len(self.df.columns)}")
+            
+            return self.df
+            
+        except Exception as e:
+            print(f"\n✗ ERROR during preprocessing: {str(e)}")
+            raise
 
 
 def main():
-    """Main preprocessing pipeline."""
+    """Main function to run the preprocessing pipeline."""
     
     # Define paths
-    raw_data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'raw')
+    raw_data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'SriLanka_Automotive_Advanced_Features.csv')
     output_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'master_dataset.csv')
     
-    print("="*60)
-    print("RETAIL PREDICT - DATA PREPROCESSING PIPELINE")
-    print("="*60)
+    # Create preprocessor and run pipeline
+    preprocessor = AutomotiveDataPreprocessor(raw_data_path, output_path)
+    df_processed = preprocessor.preprocess_pipeline()
     
-    # Initialize preprocessor
-    preprocessor = DataPreprocessor(raw_data_path, output_path)
-    
-    try:
-        # Execute preprocessing steps in sequence
-        preprocessor.load_and_merge_files()
-        preprocessor.clean_data()
-        preprocessor.impute_missing_values()
-        preprocessor.feature_engineering()
-        preprocessor.save_master_dataset()
-        preprocessor.get_summary_statistics()
-        
-        print("\n✓ PREPROCESSING COMPLETED SUCCESSFULLY!")
-        
-    except Exception as e:
-        print(f"\n✗ ERROR during preprocessing: {str(e)}")
-        raise
+    return df_processed
 
 
 if __name__ == "__main__":

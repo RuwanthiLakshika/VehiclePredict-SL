@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}About - RetailPredict{% endblock %}
+{% block title %}About - Vehicle Registration Predictor{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="page-header">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
             <div>
-                <h1><i class="fas fa-circle-info"></i> About RetailPredict</h1>
-                <p>Understanding Sri Lankan retail markets through AI</p>
+                <h1><i class="fas fa-circle-info"></i> About Vehicle Registration Predictor</h1>
+                <p>Understanding Sri Lankan automotive markets through AI</p>
             </div>
             <div style="text-align: center; display: flex; justify-content: center; align-items: center;">
-                <img src="/static/images/banana-vendor.jpg" alt="Banana Market Vendor" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
+                <img src="/static/images/sales-center.jpg" alt="Vehicle Sales Center" style="max-width: 100%; height: auto; border-radius: 12px; filter: drop-shadow(0 8px 24px rgba(0, 102, 204, 0.15)); width: 100%; max-height: 400px; object-fit: cover;">
             </div>
         </div>
     </div>
@@ -20,7 +20,7 @@
         <!-- Project Overview -->
         <section class="about-section">
             <h2><i class="fas fa-target"></i> Project Overview</h2>
-            <p>RetailPredict is an AI-powered application designed to forecast retail prices in Sri Lanka using advanced machine learning techniques. The system analyzes historical market data to provide accurate price predictions and insights into market trends.</p>
+            <p>Vehicle Registration Predictor is an AI-powered application designed to forecast vehicle registrations in Sri Lanka using advanced machine learning techniques. The system analyzes historical automotive market data to provide accurate registration predictions and insights into market trends.</p>
         </section>
 
         <!-- Technology Stack -->
@@ -61,27 +61,27 @@
             <div class="model-info">
                 <div class="metric-row">
                     <span class="metric-label">Algorithm:</span>
-                    <span class="metric-value">CatBoost Regressor (Gradient Boosting)</span>
+                    <span class="metric-value">CatBoost Regressor with Bayesian Optimization</span>
                 </div>
                 <div class="metric-row">
                     <span class="metric-label">R² Score:</span>
-                    <span class="metric-value">0.9573 (95.73%)</span>
+                    <span class="metric-value">0.9842 (98.42%)</span>
                 </div>
                 <div class="metric-row">
                     <span class="metric-label">Mean Absolute Error:</span>
-                    <span class="metric-value">₨119.31</span>
+                    <span class="metric-value">±160 vehicles/month</span>
                 </div>
                 <div class="metric-row">
-                    <span class="metric-label">Root Mean Square Error:</span>
-                    <span class="metric-value">₨185.24</span>
+                    <span class="metric-label">Optimization Method:</span>
+                    <span class="metric-value">Bayesian Hyperparameter Optimization (100 trials)</span>
                 </div>
                 <div class="metric-row">
                     <span class="metric-label">Training Samples:</span>
-                    <span class="metric-value">5000+ records</span>
+                    <span class="metric-value">648 monthly records (2018-2025)</span>
                 </div>
                 <div class="metric-row">
                     <span class="metric-label">Features:</span>
-                    <span class="metric-value">15+ categorical and numeric features</span>
+                    <span class="metric-value">10 engineered market and categorical features</span>
                 </div>
             </div>
         </section>
@@ -91,19 +91,19 @@
             <h2><i class="fas fa-star"></i> Key Features</h2>
             <ul class="feature-list">
                 <li>
-                    <strong>Real-time Price Predictions:</strong> Get instant price forecasts based on market factors
+                    <strong>Vehicle Registration Forecasting:</strong> Get instant registration predictions based on market conditions
                 </li>
                 <li>
                     <strong>SHAP Explainability:</strong> Understand why predictions are made with transparent feature importance analysis
                 </li>
                 <li>
-                    <strong>Data Visualization:</strong> Interactive charts showing price distributions, trends, and patterns
+                    <strong>Data Visualization:</strong> Interactive charts showing registration distributions, trends, and patterns
                 </li>
                 <li>
-                    <strong>Market Insights:</strong> Explore historical data and identify market trends
+                    <strong>Market Insights:</strong> Explore historical data and identify automotive market trends
                 </li>
                 <li>
-                    <strong>High Accuracy:</strong> 95.73% R² score ensures reliable forecasts
+                    <strong>High Accuracy:</strong> 98.42% R² score ensures reliable forecasts
                 </li>
             </ul>
         </section>
@@ -111,13 +111,13 @@
         <!-- Data Sources -->
         <section class="about-section">
             <h2><i class="fas fa-database"></i> Data Sources</h2>
-            <p>The model has been trained on comprehensive retail price data from Sri Lankan markets, including:</p>
+            <p>The model has been trained on comprehensive vehicle registration data from Sri Lanka, including:</p>
             <ul class="data-sources-list">
-                <li>Historical price records from multiple markets across regions</li>
-                <li>Product categories including vegetables, fruits, and other retail items</li>
+                <li>Historical registration records covering 2018-2025</li>
+                <li>Vehicle categories including cars, motorcycles, auto-rickshaws, and commercial vehicles</li>
                 <li>Market supply and demand indicators</li>
                 <li>Seasonal and temporal patterns</li>
-                <li>Regional price variations</li>
+                <li>Economic growth and policy impacts</li>
             </ul>
         </section>
 
@@ -128,29 +128,29 @@
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3>Input Features</h3>
-                        <p>Provide product details, market location, and supply/demand information</p>
+                        <h3>Input Market Conditions</h3>
+                        <p>Provide market factors like transfers, stock levels, and seasonal information</p>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-content">
                         <h3>Model Processing</h3>
-                        <p>The CatBoost model processes your input using learned patterns</p>
+                        <p>The CatBoost model processes your input using learned automotive market patterns</p>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <h3>Prediction</h3>
-                        <p>Receive an accurate price forecast with feature importance details</p>
+                        <h3>Registration Forecast</h3>
+                        <p>Receive an accurate vehicle registration forecast with feature importance details</p>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-number">4</div>
                     <div class="step-content">
-                        <h3>Insights</h3>
-                        <p>Understand which factors most influenced the prediction using SHAP</p>
+                        <h3>Market Insights</h3>
+                        <p>Understand which factors most influenced the prediction using SHAP analysis</p>
                     </div>
                 </div>
             </div>
@@ -160,10 +160,10 @@
         <section class="about-section contact-section">
             <h2><i class="fas fa-envelope"></i> Information</h2>
             <div class="contact-info">
-                <p><strong>Project:</strong> RetailPredict - AI-Powered Price Forecasting</p>
-                <p><strong>Version:</strong> 1.0</p>
-                <p><strong>Last Updated:</strong> February 2024</p>
-                <p><strong>Purpose:</strong> Assist market participants in understanding and predicting retail price trends in Sri Lanka</p>
+                <p><strong>Project:</strong> Vehicle Registration Predictor - AI-Powered Registration Forecasting</p>
+                <p><strong>Version:</strong> 2.0</p>
+                <p><strong>Last Updated:</strong> 2024</p>
+                <p><strong>Purpose:</strong> Assist market participants in understanding and predicting vehicle registration trends in Sri Lanka</p>
             </div>
         </section>
     </div>
