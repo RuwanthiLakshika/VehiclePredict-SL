@@ -59,13 +59,5 @@ python flask_app.py
 - Analyze feature importance and model explanations
 - Gain insights into what drives predictions
 
-## Model Performance
-
-| Metric | Value |
-|--------|-------|
-| R² Score | 0.9842 |
-| Prediction Error | ±160 vehicles |
-| Mean Absolute Error | 145 vehicles |
-| Root Mean Squared Error | 178 vehicles |
 
 
